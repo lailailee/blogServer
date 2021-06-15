@@ -1,24 +1,24 @@
 package core
 
 import (
-	"fmt"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
 )
 
 var Logger *zap.SugaredLogger
 
+// debugLevel : debug info error warn fatal
 // InitLogger init logger
-func InitLogger() {
-	fmt.Println(LogPath)
-	writeSyncer := getLogWriter(LogPath + "aiot.log")
+func initLogger(lumberJackLogger lumberjack.Logger, debugLevel string) {
+	writeSyncer := getLogWriter(lumberJackLogger)
 	encoder := getEncoder()
-	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
+	level := getLevel(debugLevel)
 
+	core := zapcore.NewCore(encoder, writeSyncer, level)
 	logger := zap.New(core, zap.AddCaller())
 	Logger = logger.Sugar()
-	Logger.Infof("test")
 }
 
 func getEncoder() zapcore.Encoder {
@@ -33,13 +33,37 @@ func getEncoder() zapcore.Encoder {
 // MaxBackups：保留旧文件的最大个数
 // MaxAges：保留旧文件的最大天数
 // Compress：是否压缩/归档旧文件
-func getLogWriter(path string) zapcore.WriteSyncer {
-	lumberJackLogger := &lumberjack.Logger{
-		Filename:   path,
-		MaxSize:    10,
-		MaxBackups: 5,
-		MaxAge:     30,
-		Compress:   false,
+func getLogWriter(lumberJackLogger lumberjack.Logger) zapcore.WriteSyncer {
+	// lumberJackLogger := &lumberjack.Logger{
+	// 	Filename:   path,
+	// 	MaxSize:    10,
+	// 	MaxBackups: 5,
+	// 	MaxAge:     30,
+	// 	Compress:   false,
+	// }
+	// zapcore.AddSync(lumberJackLogger)
+	// syncer = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(&hook))
+	return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(&lumberJackLogger))
+}
+
+func getLevel(debugLevel string) zapcore.Level {
+	level := zapcore.DebugLevel
+	switch debugLevel {
+	case "debug":
+		level = zapcore.DebugLevel
+		break
+	case "info":
+		level = zapcore.InfoLevel
+		break
+	case "error":
+		level = zapcore.ErrorLevel
+		break
+	case "warn":
+		level = zapcore.WarnLevel
+		break
+	case "fatal":
+		level = zapcore.FatalLevel
+		break
 	}
-	return zapcore.AddSync(lumberJackLogger)
+	return level
 }

@@ -1,0 +1,22 @@
+db:
+  type: "mysql"
+  name: "root"
+  password: "123456"
+  address: "127.0.0.1:3306"
+http:
+  port: 2610
+logger:
+  path: "./log/"
+  filename: "blog.log"
+  level: "debug"
+  age:
+    max: 1
+  size:
+    max: 1
+  backup:
+    max: 1
+
+
+
+
+

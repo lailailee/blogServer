@@ -9,15 +9,15 @@ import (
 	"strconv"
 )
 
-// GetTag 获取标签列表 get /v1/tag
-func (h *HTTPAPI) GetTag(c *gin.Context) {
+// GetSeries 获取系列列表 get /v1/series
+func (h *HTTPAPI) GetSeries(c *gin.Context) {
 	var (
 		isOk    bool
 		content gin.H
 		code    int
 		message string
 
-		res      []models.Tag
+		res      []models.Series
 		result   []map[string]interface{}
 		orderBy  = c.DefaultQuery("orderBy", "createdAt")
 		page, _  = strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -25,12 +25,12 @@ func (h *HTTPAPI) GetTag(c *gin.Context) {
 		search   = c.DefaultQuery("search", "")
 		count    int64
 	)
-	// 直接获取所有
-	models.Dbms.Db.Model(&models.Tag{}).Where("name LIKE ?", "%%"+search+"%%").Count(&count)
+
+	models.Dbms.Db.Model(&models.Series{}).Where("name LIKE ?", "%%"+search+"%%").Count(&count)
 	if err := models.Dbms.Db.Where("name LIKE ?", "%%"+search+"%%").Preload("Articles").Order(orderBy + " desc").Offset((page - 1) * limit).Limit(limit).Find(&res).Error; err != nil {
 		isOk = false
 		code = 1
-		message = fmt.Sprintf("tag get failed: %v", err)
+		message = fmt.Sprintf("series get failed: %v", err)
 		h.logger.Errorf(message)
 		goto exit
 	} else {
@@ -40,8 +40,8 @@ func (h *HTTPAPI) GetTag(c *gin.Context) {
 			tmp := map[string]interface{}{
 				"id":           v.Id,
 				"name":         v.Name,
+				"articles":     v.Articles,
 				"articleCount": len(v.Articles),
-				"article":      v.Articles,
 				"createdAt":    v.CreatedAt.Format("2006-01-02 15:04"),
 				"updatedAt":    v.UpdatedAt.Format("2006-01-02 15:04"),
 			}
@@ -69,15 +69,15 @@ exit:
 	c.JSON(200, content)
 }
 
-// AddTag 新增标签 post /v1/tag
-func (h *HTTPAPI) AddTag(c *gin.Context) {
+// AddSeries 新增系列 post /v1/series
+func (h *HTTPAPI) AddSeries(c *gin.Context) {
 	var (
 		isOk    bool
 		content gin.H
 		code    int
 		message string
 		err     error
-		res     models.Tag
+		res     models.Series
 		result  map[string]interface{}
 	)
 
@@ -90,7 +90,7 @@ func (h *HTTPAPI) AddTag(c *gin.Context) {
 	} else {
 		gbody := gjson.ParseBytes(body)
 		name := gbody.Get("name").String()
-		s := models.Tag{
+		s := models.Series{
 			Name: name,
 		}
 		if name == "" {
@@ -100,19 +100,18 @@ func (h *HTTPAPI) AddTag(c *gin.Context) {
 			h.logger.Errorf(message)
 			goto exit
 		}
-
 		// models.Dbms.Db.Model(&s).Association("Tags").Clear()
 		if err = models.Dbms.Db.Create(&s).Error; err != nil {
 			isOk = false
 			code = 1
-			message = fmt.Sprintf("update tag failed, %v", err)
+			message = fmt.Sprintf("update series failed, %v", err)
 			h.logger.Errorf(message)
 			goto exit
 		} else {
-			if err = models.Dbms.Db.Where(models.Tag{
+			if err = models.Dbms.Db.Where(models.Series{
 				Name: s.Name,
 			}).Last(&res).Error; err != nil {
-				message = fmt.Sprintf("query tag failed: [%v]", err)
+				message = fmt.Sprintf("query series failed: [%v]", err)
 				h.logger.Errorf(message)
 				isOk = false
 				code = 1
@@ -142,8 +141,8 @@ exit:
 	c.JSON(200, content)
 }
 
-// EditTag 编辑标签 put /v1/tag
-func (h *HTTPAPI) EditTag(c *gin.Context) {
+// EditSeries 编辑系列 put /v1/series
+func (h *HTTPAPI) EditSeries(c *gin.Context) {
 	var (
 		isOk    bool
 		content gin.H
@@ -151,7 +150,7 @@ func (h *HTTPAPI) EditTag(c *gin.Context) {
 		message string
 		err     error
 
-		res    models.Tag
+		res    models.Series
 		result map[string]interface{}
 		id, _  = strconv.Atoi(c.Params.ByName("id"))
 	)
@@ -165,31 +164,23 @@ func (h *HTTPAPI) EditTag(c *gin.Context) {
 	} else {
 		gbody := gjson.ParseBytes(body)
 
-		name := gbody.Get("name").String()
-		s := models.Tag{
+		s := models.Series{
 			Id:   id,
-			Name: name,
-		}
-		if name == "" {
-			isOk = false
-			code = 1
-			message = fmt.Sprintf("name is empty!")
-			h.logger.Errorf(message)
-			goto exit
+			Name: gbody.Get("name").String(),
 		}
 
 		// models.Dbms.Db.Model(&s).Association("Tags").Clear()
 		if err = models.Dbms.Db.Updates(&s).Error; err != nil {
 			isOk = false
 			code = 1
-			message = fmt.Sprintf("update tag failed, %v", err)
+			message = fmt.Sprintf("update series failed, %v", err)
 			h.logger.Errorf(message)
 			goto exit
 		} else {
-			if err = models.Dbms.Db.Where(models.Tag{
+			if err = models.Dbms.Db.Where(models.Series{
 				Id: s.Id,
 			}).Last(&res).Error; err != nil {
-				message = fmt.Sprintf("query tag failed: [%v]", err)
+				message = fmt.Sprintf("query series failed: [%v]", err)
 				h.logger.Errorf(message)
 				isOk = false
 				code = 1
@@ -220,8 +211,8 @@ exit:
 	c.JSON(200, content)
 }
 
-// DeleteTag 删除标签 delete /v1/tag
-func (h *HTTPAPI) DeleteTag(c *gin.Context) {
+// DeleteSeries 删除系列 delete /v1/series
+func (h *HTTPAPI) DeleteSeries(c *gin.Context) {
 	var (
 		isOk    bool
 		content gin.H
@@ -229,14 +220,14 @@ func (h *HTTPAPI) DeleteTag(c *gin.Context) {
 		message string
 		err     error
 
-		res   models.Tag
+		res   models.Series
 		id, _ = strconv.Atoi(c.Params.ByName("id"))
 	)
 
 	if err = models.Dbms.Db.Where(models.Article{
 		Id: id,
 	}).Preload("Articles").Last(&res).Error; err != nil {
-		message = fmt.Sprintf("query tag failed: [%v]", err)
+		message = fmt.Sprintf("query series failed: [%v]", err)
 		h.logger.Errorf(message)
 		isOk = false
 		code = 1
@@ -245,13 +236,13 @@ func (h *HTTPAPI) DeleteTag(c *gin.Context) {
 		if len(res.Articles) != 0 {
 			isOk = false
 			code = 1
-			message = fmt.Sprintf("tag %v have %v articles", res.Name, len(res.Articles))
+			message = fmt.Sprintf("series %v have %v articles", res.Name, len(res.Articles))
 			goto exit
 		} else {
 			if err = models.Dbms.Db.Where(map[string]interface{}{"id": id}).Delete(
-				&models.Tag{},
+				&models.Series{},
 			).Error; err != nil {
-				message = fmt.Sprintf("delete tag failed, %v", err)
+				message = fmt.Sprintf("delete series failed, %v", err)
 				h.logger.Errorf(message)
 				isOk = false
 				code = 1
