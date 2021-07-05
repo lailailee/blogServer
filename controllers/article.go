@@ -186,23 +186,46 @@ func (h *HTTPAPI) AddArticle(c *gin.Context) {
 		categoryId := int(gbody.Get("categoryId").Int())
 		seriesId := int(gbody.Get("seriesId").Int())
 		seriesIndex := int(gbody.Get("seriesIndex").Int())
+		ca := gbody.Get("createdAt").String()
 		loc, _ := time.LoadLocation("Local") // 获取时区
-		createdAt, _ := time.ParseInLocation("2006-01-02 15:04:05", gbody.Get("createdAt").String(), loc)
-		tags := gbody.Get("tags").String()
+		createdAt, _ := time.ParseInLocation("2006-01-02 15:04:05", ca, loc)
+		var tags []models.Tag
+		json.Unmarshal([]byte(gbody.Get("tags").String()), tags)
+
 		s := models.Article{
 			Title:      title,
 			Content:    content,
 			Overview:   overview,
 			CategoryId: categoryId,
 			// SeriesId:   seriesId,
-			SeriesIndex: seriesIndex,
-			CreatedAt:   createdAt,
+			// SeriesIndex: seriesIndex,
+			CreatedAt: createdAt,
+			Tags:      tags,
 		}
+		si := map[string]interface{}{
+			"title":       title,
+			"content":     content,
+			"overview":    overview,
+			"categoryId":  categoryId,
+			"seriesIndex": seriesIndex,
+			// "createdAt":   createdAt,
+		}
+
 		if seriesId != 0 {
+			si["seriesId"] = seriesId
+			si["seriesIndex"] = seriesIndex
 			s.SeriesId = seriesId
+			s.SeriesIndex = seriesIndex
 		}
-		json.Unmarshal([]byte(tags), &s.Tags)
-		if err = models.Dbms.Db.Create(&s).Error; err != nil {
+		if len(tags) != 0 {
+			si["tags"] = tags
+		}
+		if ca != "" {
+			si["createdAt"] = createdAt
+		} else {
+			si["createdAt"] = time.Now()
+		}
+		if err = models.Dbms.Db.Model(&models.Article{}).Create(&si).Error; err != nil {
 			isOk = false
 			code = 1
 			message = fmt.Sprintf("save article data failed: [%v]", err)

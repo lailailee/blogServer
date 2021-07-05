@@ -29,7 +29,7 @@ type Category struct {
 type Series struct {
 	Id        int       `gorm:"primarykey;column:id"  json:"id"`
 	Name      string    `gorm:"column:name;UNIQUE" json:"name"`
-	Articles  []Article `gorm:"foreignKey:CategoryId;" json:"articles"`
+	Articles  []Article `gorm:"foreignKey:SeriesId;" json:"articles"`
 	CreatedAt time.Time `gorm:"column:createdAt" json:"createdAt"`
 	UpdatedAt time.Time `gorm:"column:updatedAt" json:"updatedAt"`
 }
@@ -40,4 +40,10 @@ type Tag struct {
 	Articles  []Article `gorm:"many2many:article_tags;" json:"articles"`
 	CreatedAt time.Time `gorm:"column:createdAt" json:"createdAt"`
 	UpdatedAt time.Time `gorm:"column:updatedAt" json:"updatedAt"`
+}
+
+type User struct {
+	Id       int    `gorm:"primarykey;column:id"  json:"id"`
+	Name     string `gorm:"column:name" json:"name"`
+	Password string `gorm:"column:password" json:"password"`
 }

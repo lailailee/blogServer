@@ -42,6 +42,7 @@ func (h *HTTPAPI) initialize() {
 		Credentials:     true,
 		ValidateHeaders: false,
 	}))
+	h.app.POST("/v1/login", h.Login)
 
 	h.app.GET("/v1/article", h.GetArticleList)
 	h.app.GET("/v1/article/:id", h.GetArticle)

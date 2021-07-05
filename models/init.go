@@ -25,7 +25,9 @@ func init() {
 		return
 	}
 	db := Dbms.Db
-	db.AutoMigrate(&Article{})
 	db.AutoMigrate(&Category{})
 	db.AutoMigrate(&Tag{})
+	db.AutoMigrate(&Series{})
+	db.AutoMigrate(&Article{})
+	db.AutoMigrate(&User{})
 }
