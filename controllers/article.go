@@ -190,7 +190,8 @@ func (h *HTTPAPI) AddArticle(c *gin.Context) {
 		loc, _ := time.LoadLocation("Local") // 获取时区
 		createdAt, _ := time.ParseInLocation("2006-01-02 15:04:05", ca, loc)
 		var tags []models.Tag
-		json.Unmarshal([]byte(gbody.Get("tags").String()), tags)
+		// tags :=
+		json.Unmarshal([]byte(gbody.Get("tags").String()), &tags)
 
 		s := models.Article{
 			Title:      title,
@@ -202,6 +203,7 @@ func (h *HTTPAPI) AddArticle(c *gin.Context) {
 			CreatedAt: createdAt,
 			Tags:      tags,
 		}
+		// json.Unmarshal(tags, &s.Tags)
 		si := map[string]interface{}{
 			"title":       title,
 			"content":     content,
@@ -218,14 +220,14 @@ func (h *HTTPAPI) AddArticle(c *gin.Context) {
 			s.SeriesIndex = seriesIndex
 		}
 		if len(tags) != 0 {
-			si["tags"] = tags
+			si["tags"] = s.Tags
 		}
 		if ca != "" {
 			si["createdAt"] = createdAt
 		} else {
 			si["createdAt"] = time.Now()
 		}
-		if err = models.Dbms.Db.Model(&models.Article{}).Create(&si).Error; err != nil {
+		if err = models.Dbms.Db.Model(&models.Article{}).Create(&s).Error; err != nil {
 			isOk = false
 			code = 1
 			message = fmt.Sprintf("save article data failed: [%v]", err)
